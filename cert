@@ -1,0 +1,50 @@
+---
+- name: Build a CA with SSL in the Control Node
+  hosts: control_node
+  become: yes
+  vars:
+    ca_dir: "/home/{{ ansible_user }}/my_ca"
+    private_key: "{{ ca_dir }}/ca.key"
+    certificate: "{{ ca_dir }}/ca.crt"
+    country: "PH"
+    state: "Metro Manila"
+    locality: "Manila"
+    organization: "MyOrg"
+    common_name: "myca.local"
+  tasks:
+
+    - name: Ensure openssl is installed
+      apt:
+        name: openssl
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Create CA directory
+      file:
+        path: "{{ ca_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Generate CA private key
+      command: >
+        openssl genrsa -out {{ private_key }} 2048
+      args:
+        creates: "{{ private_key }}"
+
+    - name: Generate self-signed certificate
+      command: >
+        openssl req -x509 -new -nodes
+        -key {{ private_key }}
+        -sha256 -days 365
+        -subj "/C={{ country }}/ST={{ state }}/L={{ locality }}/O={{ organization }}/CN={{ common_name }}"
+        -out {{ certificate }}
+      args:
+        creates: "{{ certificate }}"
+
+    - name: List CA files
+      shell: ls -l "{{ ca_dir }}"
+      register: ca_files
+
+    - name: Show CA files
+      debug:
+        var: ca_files.stdout_lines
