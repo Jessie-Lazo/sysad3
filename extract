@@ -1,0 +1,30 @@
+---
+- name: Extract executable from PCAP file
+  hosts: manage_nodes
+  become: yes
+  vars:
+    pcap_source: "/home/YOUR_USERNAME/sample.pcap"
+    pcap_dest: "/home/{{ ansible_user }}/sample.pcap"
+    extract_dir: "/home/{{ ansible_user }}/extracted_files"
+  tasks:
+
+    - name: Ensure foremost is installed
+      apt:
+        name: foremost
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Create extraction directory
+      file:
+        path: "{{ extract_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy PCAP file from Control Node to Manage Node
+      copy:
+        src: "{{ pcap_source }}"
+        dest: "{{ pcap_dest }}"
+        mode: '0644'
+
+    - name: Run foremost to extract files
+      command: "foremost -i {{ pcap_dest }} -o {{ extract_dir }}"
