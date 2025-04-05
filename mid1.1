@@ -1,0 +1,32 @@
+---
+- name: Set up firewall
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Update package cache (Ubuntu)
+      ansible.builtin.apt:
+        update_cache: yes
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Install UFW on Ubuntu
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Install firewalld on CentOS
+      ansible.builtin.yum:
+        name: firewalld
+        state: present
+      when: ansible_distribution == "CentOS"
+
+    - name: Enable UFW on Ubuntu
+      ansible.builtin.shell: ufw enable
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Start and enable firewalld on CentOS
+      ansible.builtin.systemd:
+        name: firewalld
+        state: started
+        enabled: yes
+      when: ansible_distribution == "CentOS"
